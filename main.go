@@ -10,7 +10,7 @@ import (
 func initConfigs() error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return fmt.Errorf("не удалось получить домашнюю директорию: %v", err)
+		return fmt.Errorf("failed to get home directory: %v", err)
 	}
 
 	configs := map[string]string{
@@ -23,18 +23,18 @@ func initConfigs() error {
 	for tool, destPath := range configs {
 		srcPath := fmt.Sprintf("./configs/%s", tool)
 		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
-			return fmt.Errorf("конфигурация для %s не найдена", tool)
+			return fmt.Errorf("configuration for %s not found", tool)
 		}
 
 		if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-			return fmt.Errorf("не удалось создать директорию для %s: %v", tool, err)
+			return fmt.Errorf("failed to create directory for %s: %v", tool, err)
 		}
 
 		if err := copyFile(srcPath, destPath); err != nil {
-			return fmt.Errorf("не удалось скопировать конфигурацию для %s: %v", tool, err)
+			return fmt.Errorf("failed to copy configuration for %s: %v", tool, err)
 		}
 
-		fmt.Printf("Конфигурация для %s успешно установлена\n", tool)
+		fmt.Printf("Configuration for %s successfully installed\n", tool)
 	}
 
 	return nil
@@ -50,30 +50,30 @@ func copyFile(src, dest string) error {
 
 func installZsh() error {
 	if err := runCommand("sudo", "apt", "install", "-y", "zsh"); err != nil {
-		return fmt.Errorf("ошибка при установке Zsh: %v", err)
+		return fmt.Errorf("error installing Zsh: %v", err)
 	}
 
 	if err := runCommand("sh", "-c", "$(curl -fsSL curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"); err != nil {
-		return fmt.Errorf("ошибка при установке Oh My Zsh: %v", err)
+		return fmt.Errorf("error installing Oh My Zsh: %v", err)
 	}
 
 	zshrcPath := filepath.Join(os.Getenv("HOME"), ".zshrc")
 	localZshrc, err := os.ReadFile("./configs/zsh/.zshrc")
 	if err != nil {
-		return fmt.Errorf("не удалось прочитать локальный .zshrc: %v", err)
+		return fmt.Errorf("failed to read local .zshrc: %v", err)
 	}
 
 	file, err := os.OpenFile(zshrcPath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("не удалось открыть .zshrc: %v", err)
+		return fmt.Errorf("failed to open .zshrc: %v", err)
 	}
 	defer file.Close()
 
 	if _, err := file.Write(localZshrc); err != nil {
-		return fmt.Errorf("не удалось записать в .zshrc: %v", err)
+		return fmt.Errorf("failed to write to .zshrc: %v", err)
 	}
 
-	fmt.Println("Zsh и Oh My Zsh успешно установлены, .zshrc обновлен")
+	fmt.Println("Zsh and Oh My Zsh successfully installed, .zshrc updated")
 	return nil
 }
 
@@ -86,24 +86,24 @@ func runCommand(name string, arg ...string) error {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Использование: ./setup-tools <команда>")
-		fmt.Println("Команды: init, install-zsh")
+		fmt.Println("Usage: ./setup-tools <command>")
+		fmt.Println("Commands: init, install-zsh")
 		return
 	}
 
 	switch os.Args[1] {
 	case "init":
 		if err := initConfigs(); err != nil {
-			fmt.Println("Ошибка:", err)
+			fmt.Println("Error:", err)
 			os.Exit(1)
 		}
 	case "install-zsh":
 		if err := installZsh(); err != nil {
-			fmt.Println("Ошибка:", err)
+			fmt.Println("Error:", err)
 			os.Exit(1)
 		}
 	default:
-		fmt.Println("Неизвестная команда")
+		fmt.Println("Unknown command")
 		os.Exit(1)
 	}
 }
