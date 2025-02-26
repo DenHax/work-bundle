@@ -22,16 +22,20 @@ func initConfigs() error {
 
 	for tool, destPath := range configs {
 		srcPath := fmt.Sprintf("./configs/%s", tool)
-		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
-			return fmt.Errorf("configuration for %s not found", tool)
-		}
 
 		if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 			return fmt.Errorf("failed to create directory for %s: %v", tool, err)
 		}
 
-		if err := copyFile(srcPath, destPath); err != nil {
-			return fmt.Errorf("failed to copy configuration for %s: %v", tool, err)
+		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+			fmt.Printf("Configuration for %s not found in ./configs, creating an empty file at %s\n", tool, destPath)
+			if err := os.WriteFile(destPath, []byte{}, 0644); err != nil {
+				return fmt.Errorf("failed to create empty configuration for %s: %v", tool, err)
+			}
+		} else {
+			if err := copyFile(srcPath, destPath); err != nil {
+				return fmt.Errorf("failed to copy configuration for %s: %v", tool, err)
+			}
 		}
 
 		fmt.Printf("Configuration for %s successfully installed\n", tool)
@@ -49,6 +53,7 @@ func copyFile(src, dest string) error {
 }
 
 func installZsh() error {
+
 	if err := runCommand("sudo", "apt", "install", "-y", "zsh"); err != nil {
 		return fmt.Errorf("error installing Zsh: %v", err)
 	}
